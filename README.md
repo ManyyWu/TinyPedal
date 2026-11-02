@@ -1,5 +1,7 @@
 # TinyPedal - racing simulation overlay
 
+English | [简体中文（个人汉化版）](README.zh-CN.md)
+
 TinyPedal is a Free and Open Source telemetry overlay application for racing simulation.
 
 Focuses on minimalist design, light-weight and efficiency, extensive customization and data analysis. Features a large collection of highly configurable overlay widgets and data modules, advanced fuel calculator and editing tools.
