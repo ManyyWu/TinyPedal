@@ -34,6 +34,7 @@ from PySide2.QtWidgets import (
 
 from .. import app_signal, cfg
 from ..formatter import format_module_name
+from ..languages import list_name
 from ..module_control import ModuleControl
 from ._common import UIScaler
 from .config import UserConfig
@@ -85,7 +86,10 @@ class ModuleList(QWidget):
         for _name in self.module_control.names:
             module_item = ModuleControlItem(self, _name, self.module_control)
             item = QListWidgetItem()
-            item.setText(format_module_name(_name))
+            english_name = format_module_name(_name)
+            item.setText(list_name(_name, english_name))
+            item.setToolTip(english_name)
+            module_item.setToolTip(english_name)
             self.listbox_module.addItem(item)
             self.listbox_module.setItemWidget(item, module_item)
         self.listbox_module.setCurrentRow(0)

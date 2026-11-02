@@ -49,6 +49,7 @@ from .. import cfg
 from .. import regex_pattern as rxp
 from ..constant import CONFIG
 from ..formatter import format_option_name
+from ..languages import config_label, config_ui
 from ._common import (
     QVAL_COLOR,
     QVAL_FLOAT,
@@ -121,19 +122,21 @@ class FontConfig(BaseDialog):
 
         layout_option = QGridLayout()
         layout_option.setAlignment(Qt.AlignTop)
-        layout_option.addWidget(QLabel("Font Name"), 0, 0)
+        layout_option.addWidget(QLabel(config_ui("Font Name")), 0, 0)
         layout_option.addWidget(self.edit_fontname, 0, 1)
-        layout_option.addWidget(QLabel("Font Size Addend"), 1, 0)
+        layout_option.addWidget(QLabel(config_ui("Font Size Addend")), 1, 0)
         layout_option.addWidget(self.edit_fontsize, 1, 1)
-        layout_option.addWidget(QLabel("Font Weight"), 2, 0)
+        layout_option.addWidget(QLabel(config_ui("Font Weight")), 2, 0)
         layout_option.addWidget(self.edit_fontweight, 2, 1)
-        layout_option.addWidget(QLabel("Enable Auto Font Offset"), 3, 0)
+        layout_option.addWidget(QLabel(config_ui("Enable Auto Font Offset")), 3, 0)
         layout_option.addWidget(self.edit_autooffset, 3, 1)
-        layout_option.addWidget(QLabel("Font Offset Vertical Addend"), 4, 0)
+        layout_option.addWidget(QLabel(config_ui("Font Offset Vertical Addend")), 4, 0)
         layout_option.addWidget(self.edit_fontoffset, 4, 1)
 
         # Button
         button_apply = QDialogButtonBox(QDialogButtonBox.Apply)
+        button_apply.button(QDialogButtonBox.Apply).setText(config_ui("Apply"))
+        button_apply.button(QDialogButtonBox.Apply).setToolTip("Apply")
         button_apply.clicked.connect(self.applying)
 
         button_save = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
@@ -237,7 +240,7 @@ class UserConfig(BaseDialog):
             fixed_column: whether option column width is fixed, default True.
         """
         super().__init__(parent)
-        self.set_config_title(format_option_name(key_name), set_preset_name(preset_name, config_type))
+        self.set_config_title(config_label(key_name, key_name, format_option_name(key_name)), set_preset_name(preset_name, config_type))
 
         self.reloading = reload_func
         self.key_name = key_name
@@ -268,11 +271,11 @@ class UserConfig(BaseDialog):
         auto_complete_search.setCaseSensitivity(Qt.CaseInsensitive)
 
         edit_search = QLineEdit(self)
-        edit_search.setPlaceholderText(" Type here to search options")
+        edit_search.setPlaceholderText(config_ui(" Type here to search options"))
         edit_search.setCompleter(auto_complete_search)
         edit_search.textChanged.connect(self.search_options)
 
-        button_clearsearch = CompactButton("Clear")
+        button_clearsearch = CompactButton(config_ui("Clear"))
         button_clearsearch.clicked.connect(edit_search.clear)
         button_clearsearch.setFocusPolicy(Qt.NoFocus)
 
@@ -283,20 +286,28 @@ class UserConfig(BaseDialog):
         # Button
         has_display_order = (config_type == CONFIG.TYPE_WIDGET and self.has_display_order())
         if has_display_order:
-            button_display_order = QPushButton("Configure Display Order")
+            button_display_order = QPushButton(config_ui("Configure Display Order"))
             button_display_order.clicked.connect(self.open_display_order)
 
         button_reset = QDialogButtonBox(QDialogButtonBox.Reset)
+        button_reset.button(QDialogButtonBox.Reset).setText(config_ui("Reset"))
+        button_reset.button(QDialogButtonBox.Reset).setToolTip("Reset")
         button_reset.clicked.connect(self.reset_setting)
         button_reset.setFocusPolicy(Qt.NoFocus)
 
         button_apply = QDialogButtonBox(QDialogButtonBox.Apply)
+        button_apply.button(QDialogButtonBox.Apply).setText(config_ui("Apply"))
+        button_apply.button(QDialogButtonBox.Apply).setToolTip("Apply")
         button_apply.clicked.connect(self.applying)
 
         button_save = QDialogButtonBox(QDialogButtonBox.Save)
+        button_save.button(QDialogButtonBox.Save).setText(config_ui("Save"))
+        button_save.button(QDialogButtonBox.Save).setToolTip("Save")
         button_save.accepted.connect(self.saving)
 
         button_cancel = QDialogButtonBox(QDialogButtonBox.Cancel)
+        button_cancel.button(QDialogButtonBox.Cancel).setText(config_ui("Cancel"))
+        button_cancel.button(QDialogButtonBox.Cancel).setToolTip("Cancel")
         button_cancel.rejected.connect(self.reject)
 
         layout_button = QHBoxLayout()
@@ -334,7 +345,7 @@ class UserConfig(BaseDialog):
         for row_index in range(layout_option.rowCount()):
             label = layout_option.itemAtPosition(row_index, 0).widget()
             option = layout_option.itemAtPosition(row_index, 1).widget()
-            hidden = text not in label.text().lower()
+            hidden = text not in f"{label.text()} {label.toolTip()}".lower()
             label.setHidden(hidden)
             option.setHidden(hidden)
 
@@ -426,7 +437,8 @@ class UserConfig(BaseDialog):
             # Option name
             option_name = format_option_name(key)
             option_word_set.update(option_name.split())
-            self._add_option_label(row_index, option_name, layout)
+            option_word_set.add(config_label(self.key_name, key, option_name))
+            self._add_option_label(row_index, option_name, layout, key)
             # Bool
             if re.search(rxp.CFG_BOOL, key):
                 self._add_option_bool(row_index, key, layout)
@@ -482,13 +494,15 @@ class UserConfig(BaseDialog):
 
     def _add_group_label(self, row_index: int, option_name: str, layout: QGridLayout):
         """Option group"""
-        label = OptionGroup(option_name, self)
+        label = OptionGroup(config_label(self.key_name, option_name.lower().replace(" ", "_"), option_name), self)
+        label.setToolTip(option_name)
         label.setAlignment(Qt.AlignCenter)
         layout.addWidget(label, row_index, COLUMN_LABEL, 1, 2)
 
-    def _add_option_label(self, row_index: int, option_name: str, layout: QGridLayout):
+    def _add_option_label(self, row_index: int, option_name: str, layout: QGridLayout, key: str):
         """Option label"""
-        label = QLabel(option_name, self)
+        label = QLabel(config_label(self.key_name, key, option_name), self)
+        label.setToolTip(option_name)
         label.setMinimumHeight(UIScaler.size(1.8))
         layout.addWidget(label, row_index, COLUMN_LABEL)
 
